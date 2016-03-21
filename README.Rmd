@@ -1,0 +1,173 @@
+---
+title: "RStataLink -- R package for calling Stata from R interactively"
+author: "Aleksander Rutkowski"
+date: "18 March 2016"
+output:
+  html_document:
+    keep_md: true
+---
+
+## Features
+
+Execute smaller or larger bits and pieces of Stata code **interactively** from R 
+in a [Stata](http://www.stata.com/) "server" i.e. not in a batch mode:
+
+- avoid repeated costly operations, e.g. open Stata and load data in Stata **only once**
+and do subsequent operations requiring R<->Stata interaction without
+re-opening and re-loading
+- easy R<->Stata **data exchange** (import/export)
+- easy Stata r() and e() **"results" extraction** (macros, scalars, matrices, coefficients
+and standard errors), shaped for convenient consumption in R
+- **concurrency** "primitive" ([future](https://en.wikipedia.org/wiki/Futures_and_promises)-like)
+and parallel `apply()`-style functions for executing Stata code in a concurrent/parallel
+manner in a "cluster" of multiple Stata instances (regular and load-balancing versions)
+- should work **cross-platform** -- pure R and pure Stata code (but developed and tested on
+MS Windows only)
+
+Make your work with Stata more
+[functional](https://en.wikipedia.org/wiki/Functional_programming)!
+
+Similar but unrelated project: <https://github.com/lbraglia/RStata>. It seems
+to offer only batch mode i.e. not interactive.
+
+## How it works
+
+Stata "server" is a Stata instance running an infinite loop and waiting for new jobs
+showing up in a specific directory/folder. Thus, the R<->Stata communication is
+disk-based so it can take place only locally (within a single computer) or through a
+shared network drive (across computers).
+
+In the latter case (the shared drive approach), Stata would still need to be
+opened by R with `startStata()` or `startStataCluster()` on the "server" computer
+(e.g. via SSH). The generated `StataID` object(s) (see `i` or `cl`
+below) need(s) to be serialised (e.g. with `saveRDS()`) and transmitted in some way
+to a remote "client" computer to be deserialised (e.g. with `readRDS()`).
+The entire path to the shared network drive directory (see argument `compath` in
+`startStata()`) should be the same on both computers ("server" and "client").
+
+## Installation
+
+```{r, eval=FALSE, include=TRUE}
+if ('devtools' %in% installed.packages()[,"Package"])
+	devtools::install_github('alekrutkowski/RStataLink') else
+	stop('You need package "devtools"!')
+```
+
+## Usage examples
+
+Tell R where Stata is (can be also per-call -- using argument `start_cmd` in `startStata()` --
+but that would be less convenient):
+
+```{r}
+# A virtualised app in my case, therefore such a complicated path, should be simpler normally:
+options(statapath=paste('"C:\\Program Files (x86)\\Microsoft Application Virtualization Client\\sfttray.exe"',
+                        '/launch "StataMP 14 (64-bit) [V] 14.0bd001"'))
+```
+
+### A single Stata instance functionality demo
+
+For the Stata code pieces use a string with a newline
+character (\\n), or multi-line string, or a character vector (that will be converted to a
+multi-line string):
+
+```{r, comment="##     "}
+library(RStataLink)
+i <- startStata()
+i
+r1 <- doInStata(i, 'display 100 + 15.7', results = NULL)
+r1  # results = NULL means no import of Stata e() or r() results
+# Use in Stata a built-in demo dataset on cars
+# and make a simple regression with robust standard errors
+# (the 3 lines of code could be also done with 3 consecutive doInStata calls)
+r2 <- doInStata(i,
+				'sysuse auto, clear
+				regress price weight trunk, robust
+				ereturn list')
+r2$log
+r2$results  # this (below) looks similar to "ereturn list" in Stata (above)
+# Use in Stata an R demo dataset on flowers
+# modify it (temporarily in Stata with preserve...restore,
+# see http://www.stata.com/help.cgi?preserve)
+# and do a simple regression:
+data(iris)
+r3 <- doInStata(i, code = 
+                'describe
+				gen ln_sepallength = log(sepallength)
+				reg ln_sepallength sepalwidth petallength petalwidth',
+				df=iris,
+				preserve_restore = TRUE)
+r3$log
+# If data is exported to Stata with df = ...
+# a (possibly modified) Stata dataset is imported back
+# into R unless argument import_df = FALSE is
+# specified in doInStata()
+str(r3$df)
+r3$results$e_class  # again, the estimated results from e() are available:
+# Since we did preserve...restore in Stata
+# while operating on the iris data,
+# the data on cars is still there
+doInStata(i, 'describe', results=NULL)
+# Also r-class Stata results can be collected:
+r4 <- doInStata(i, 'summarize price \n return list',
+				results = 'r')  # Stata r-class results only
+r4
+# A non-blocking call to Stata -- perform some long-running job
+system.time({f <- doInStata(i, 'sleep 8000 \n display "hello"',
+							future = TRUE,
+							results = NULL)})
+# do some work in R in the meantime:
+Sys.sleep(2)
+# collect the results from Stata if ready
+# (if not ready, you must wait -- it's blocking this time):
+system.time({r5 <- getStataFuture(f)})
+r5
+# Say good-bye to Stata:
+stopStata(i)
+```
+
+### A multiple Stata instance functionality demo
+
+```{r, comment="##     "}
+library(RStataLink)
+# The length of cl (the number of Stata instances) will depend
+# on the number of cores detected by parallel::detectCores()
+# (but you can override it)
+cl <- startStataCluster()
+# It's just a simple list overall:
+class(cl)
+# Have a look at the first element:
+cl[[1]]
+# A trivial example - a series of different regressions with
+# only one explanatory variable each:
+m <- paste('regress sepallength',
+				 c('sepalwidth',
+				   'petallength',
+				   'petalwidth'))
+cat(m, sep = '\n')
+c1 <- doInStataCluster(cl,
+					   # X = a vector (atomic or list) of tasks/jobs
+					   # expressed as a character vector
+					   # or a list of character vectors (which will be
+					   # collapsed into string each)
+					   X = m,
+					   nolog = TRUE,
+					   df = iris,
+					   import_df = FALSE)
+# A load-balancing version -- use if some jobs/tasks
+# are much longer than others (iris data already loaded
+# so no need for df = iris):
+c2 <- doInStataClusterLB(cl,
+					   X = m,
+					   nolog = TRUE)
+identical(c1, c2)
+# Collect the results:
+library(magrittr) # for the super cool pipe operator %>%
+c1 %>%
+	lapply(function(x) x$results$e_class$modeldf) %>%
+	do.call(rbind, .)
+# Say good-bye to all the Statas opened by R
+# (clear = TRUE so that each Stata allows you
+# to discard the imported iris data):
+stopStataCluster(cl, clear = TRUE)
+```
+

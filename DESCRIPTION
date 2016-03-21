@@ -1,0 +1,14 @@
+Package: RStataLink
+Type: Package
+Title: Tools for calling Stata from R interactively
+Version: 1.2
+Date: 2016-03-07
+Author: Aleksander Rutkowski
+Maintainer: Aleksander Rutkowski <alek.rutkowski@gmail.com>
+Imports:
+    magrittr
+Collate:
+  helpers.R
+  print.R
+  core.R
+  concurrent.R
