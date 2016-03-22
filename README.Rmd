@@ -1,7 +1,6 @@
 ---
 title: "RStataLink -- R package for calling Stata from R interactively"
 author: "Aleksander Rutkowski"
-date: '`r format(Sys.Date(), "%d %B %Y")`'
 output:
   html_document:
     keep_md: true

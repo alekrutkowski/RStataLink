@@ -1,6 +1,5 @@
 # RStataLink -- R package for calling Stata from R interactively
 Aleksander Rutkowski  
-`r format(Sys.Date(), "%d %B %Y")`  
 
 ## Features
 
@@ -85,12 +84,12 @@ i
 ##      StataID object:
 ##      
 ##       Stata "server" id:
-##       Yy7 
+##       2fp 
 ##       (you can see it in the top of the Stata window)
 ##      
 ##       Full path to the Stata "server" <--> R
 ##       data exchange directory (folder):
-##       C:\Users\rutkoal\AppData\Local\Temp\1\RtmpyER5em/Yy7 
+##       C:\Users\rutkoal\AppData\Local\Temp\1\RtmpADxwmD/2fp 
 ##      
 ##       Should Stata close if this directory disappears:
 ##       no
@@ -497,7 +496,7 @@ system.time({r5 <- getStataFuture(f)})
 
 ```
 ##         user  system elapsed 
-##         0.54    0.04    5.96
+##         0.45    0.09    5.99
 ```
 
 ```r
@@ -551,12 +550,12 @@ cl[[1]]
 ##      StataID object:
 ##      
 ##       Stata "server" id:
-##       HoF 
+##       tmJ 
 ##       (you can see it in the top of the Stata window)
 ##      
 ##       Full path to the Stata "server" <--> R
 ##       data exchange directory (folder):
-##       C:\Users\rutkoal\AppData\Local\Temp\1\RtmpyER5em/HoF 
+##       C:\Users\rutkoal\AppData\Local\Temp\1\RtmpADxwmD/tmJ 
 ##      
 ##       Should Stata close if this directory disappears:
 ##       no
