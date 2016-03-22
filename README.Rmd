@@ -1,7 +1,7 @@
 ---
 title: "RStataLink -- R package for calling Stata from R interactively"
 author: "Aleksander Rutkowski"
-date: "18 March 2016"
+date: '`r format(Sys.Date(), "%d %B %Y")`'
 output:
   html_document:
     keep_md: true
@@ -94,7 +94,7 @@ r3 <- doInStata(i, code =
                 'describe
 				gen ln_sepallength = log(sepallength)
 				reg ln_sepallength sepalwidth petallength petalwidth',
-				df=iris,
+				df = iris,
 				preserve_restore = TRUE)
 r3$log
 # If data is exported to Stata with df = ...
@@ -112,13 +112,15 @@ r4 <- doInStata(i, 'summarize price \n return list',
 				results = 'r')  # Stata r-class results only
 r4
 # A non-blocking call to Stata -- perform some long-running job
-system.time({f <- doInStata(i, 'sleep 8000 \n display "hello"',
+system.time({f <- doInStata(i, 'sleep 8000 // in milliseconds in Stata
+							display "hello"',
 							future = TRUE,
 							results = NULL)})
 # do some work in R in the meantime:
 Sys.sleep(2)
 # collect the results from Stata if ready
-# (if not ready, you must wait -- it's blocking this time):
+# (if not ready, you must wait -- it's blocking this time,
+# note the approximate time difference: 8 - 2 = 6):
 system.time({r5 <- getStataFuture(f)})
 r5
 # Say good-bye to Stata:

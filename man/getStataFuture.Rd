@@ -12,17 +12,8 @@ getStataFuture(StataFuture)
 when a job was sent to Stata.}
 }
 \value{
-A list with:
-\itemize{
-         \item \code{log} -- A character vector with Stata display log
-         if \code{nolog} in the job request was is \code{FALSE}.
-         May be an empty string if Stata does not finish executing
-         the code before the \code{timeout} set in the job.
-         \item \code{df} -- Optional: a data frame saved by Stata if
-         \code{import_df} was \code{TRUE} in the job and
-         if it can be read by \code{\link[utils]{read.delim}}, else \code{NULL}
-         if \code{\link[utils]{read.delim}} returns an error.
-}
+See the description of the return value for \code{\link[RStataLink]{doInStata}} with
+argument \code{future = FALSE}.
 }
 \description{
 Obtain Stata output from a job previously sent to Stata by \code{\link[RStataLink]{doInStata}}

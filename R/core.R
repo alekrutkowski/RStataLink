@@ -22,11 +22,22 @@
 #' If \code{future = FALSE}, a list with:
 #' \itemize{
 #'          \item \code{log} -- A character vector with Stata display log
-#'          if \code{nolog} is \code{FALSE}. May be an empty string if Stata does not finish executing
+#'          if \code{nolog = FALSE}. May be an empty string if Stata does not finish executing
 #'          the code before \code{timeout}.
-#'          \item \code{df} -- Optional: a data frame saved by Stata if \code{import_df} is \code{TRUE} and
+#'          \item \code{df} -- Optional: a data frame saved by Stata if \code{import_df = TRUE} and
 #'          if it can be read by \code{\link[utils]{read.delim}}, else \code{NULL}
 #'          if \code{\link[utils]{read.delim}} returns an error.
+#'			\item \code{results} -- if the argument \code{results} is not \code{NULL}, a list with
+#'			one or both of the elements named \code{e_class} and/or \code{r_class}
+#'			(depending on what was specified in the argument \code{results}), each including (if available):
+#'			\itemize{
+#'				   \item \code{scalars} -- a named list of numeric scalar values,
+#'				   \item \code{macros} -- a named list of character (string/text) values,
+#'				   \item \code{matrices} -- a named list of numeric matrices,
+#'				   \item \code{modeldf} -- only for \code{e_class}: a data.frame with the estimated coefficients
+#'				   (column \code{coef}), and standard errors (column \code{stderr}), with
+#'				   the Stata variable names recorded in row.names.
+#'			}
 #' }
 #' If \code{future = TRUE}, an object of S3 class 'StataFuture' to be used by
 #' \code{\link[RStataLink]{getStataFuture}}.
@@ -75,9 +86,7 @@ doInStata <- function(id,
 		  'log using "' %++% logfile %++% '", replace text name(`log_' %++% names(id) %++% '\')',
 		  ifelse(preserve_restore, 'preserve', ""),
 		  import_df_cmd,
-		  'cap noi /*' %++% time_stamp %++% '*/ {', # time stamp to remove from log later
 		  code,
-		  '} /*' %++% time_stamp %++% '*/', # time stamp to remove from log later
 		  ifelse(!is.null(results), 'qui getStataResults ' %++% time_stamp, ""),
 		  save_result_cmd,
 		  ifelse(preserve_restore, 'restore', ""),
@@ -99,17 +108,8 @@ doInStata <- function(id,
 #' \code{\link[RStataLink]{doInStata}}, with argument \code{future = TRUE},
 #' when a job was sent to Stata.
 #' @return
-#' A list with:
-#' \itemize{
-#'          \item \code{log} -- A character vector with Stata display log
-#'          if \code{nolog} in the job request was is \code{FALSE}.
-#'          May be an empty string if Stata does not finish executing
-#'          the code before the \code{timeout} set in the job.
-#'          \item \code{df} -- Optional: a data frame saved by Stata if
-#'          \code{import_df} was \code{TRUE} in the job and
-#'          if it can be read by \code{\link[utils]{read.delim}}, else \code{NULL}
-#'          if \code{\link[utils]{read.delim}} returns an error.
-#' }
+#' See the description of the return value for \code{\link[RStataLink]{doInStata}} with
+#' argument \code{future = FALSE}.
 #' @export
 getStataFuture <- function(StataFuture) {
 	stopifnot(class(StataFuture)=='StataFuture')
@@ -131,7 +131,7 @@ getStataFuture <- function(StataFuture) {
 			grepl(Output$log) %>% any ||
 			Sys.time() %>% as.numeric %>% subtract(t) >= timeout) {
 			if(length(Output$log)>=10)
-				Output$log %<>% extract(10:(length(.)-10)) %>%
+				Output$log %<>% extract(9:(length(.)-10)) %>%
 				Filter(function(x)
 					x!='. ' & !grepl(time_stamp,x),
 					.) %>%

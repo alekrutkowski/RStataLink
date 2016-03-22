@@ -17,7 +17,6 @@ qui {
 			noi di as res "$S_DATE $S_TIME - Now processing:" _n as txt "`f'"
 			loc message 1
 			cap noi do "<<<CD>>>/`f'"
-			messageiferr601
 			cap erase "<<<CD>>>/`f'"
 			if `n'==`nF' & `message'==1 {
 				noi di as txt as smcl "{hline}"

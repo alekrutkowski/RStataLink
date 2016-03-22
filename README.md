@@ -1,6 +1,6 @@
 # RStataLink -- R package for calling Stata from R interactively
 Aleksander Rutkowski  
-18 March 2016  
+`r format(Sys.Date(), "%d %B %Y")`  
 
 ## Features
 
@@ -85,12 +85,12 @@ i
 ##      StataID object:
 ##      
 ##       Stata "server" id:
-##       OQX 
+##       Yy7 
 ##       (you can see it in the top of the Stata window)
 ##      
 ##       Full path to the Stata "server" <--> R
 ##       data exchange directory (folder):
-##       C:\Users\rutkoal\AppData\Local\Temp\1\RtmpAp1fNp/OQX 
+##       C:\Users\rutkoal\AppData\Local\Temp\1\RtmpyER5em/Yy7 
 ##      
 ##       Should Stata close if this directory disappears:
 ##       no
@@ -121,6 +121,7 @@ r2$log
 ```
 ##      . sysuse auto, clear
 ##      (1978 Automobile Data)
+##      
 ##      .                                 regress price weight trunk, robust
 ##      
 ##      Linear regression                               Number of obs     =         74
@@ -137,6 +138,7 @@ r2$log
 ##             trunk |  -60.03885   88.23694    -0.68   0.498    -235.9783    115.9006
 ##             _cons |   148.5533   947.5387     0.16   0.876    -1740.785    2037.892
 ##      ------------------------------------------------------------------------------
+##      
 ##      .                                 ereturn list
 ##      
 ##      scalars:
@@ -272,7 +274,7 @@ r3 <- doInStata(i, code =
                 'describe
 				gen ln_sepallength = log(sepallength)
 				reg ln_sepallength sepalwidth petallength petalwidth',
-				df=iris,
+				df = iris,
 				preserve_restore = TRUE)
 r3$log
 ```
@@ -297,7 +299,9 @@ r3$log
 ##      ------------------------------------------------------------------------------
 ##      Sorted by: 
 ##           Note: Dataset has changed since last saved.
+##      
 ##      .                                 gen ln_sepallength = log(sepallength)
+##      
 ##      .                                 reg ln_sepallength sepalwidth petallength petalwidth
 ##      
 ##            Source |       SS           df       MS      Number of obs   =       150
@@ -440,6 +444,7 @@ r4
 ##          Variable |        Obs        Mean    Std. Dev.       Min        Max
 ##      -------------+---------------------------------------------------------
 ##             price |         74    6165.257    2949.496       3291      15906
+##      
 ##      .  return list
 ##      
 ##      scalars:
@@ -470,7 +475,8 @@ r4
 
 ```r
 # A non-blocking call to Stata -- perform some long-running job
-system.time({f <- doInStata(i, 'sleep 8000 \n display "hello"',
+system.time({f <- doInStata(i, 'sleep 8000 // in milliseconds in Stata
+							display "hello"',
 							future = TRUE,
 							results = NULL)})
 ```
@@ -484,13 +490,14 @@ system.time({f <- doInStata(i, 'sleep 8000 \n display "hello"',
 # do some work in R in the meantime:
 Sys.sleep(2)
 # collect the results from Stata if ready
-# (if not ready, you must wait -- it's blocking this time):
+# (if not ready, you must wait -- it's blocking this time,
+# note the approximate time difference: 8 - 2 = 6):
 system.time({r5 <- getStataFuture(f)})
 ```
 
 ```
 ##         user  system elapsed 
-##         0.44    0.08    5.97
+##         0.54    0.04    5.96
 ```
 
 ```r
@@ -499,8 +506,9 @@ r5
 
 ```
 ##      $log
-##      . sleep 8000 
-##      .  display "hello"
+##      . sleep 8000 // in milliseconds in Stata
+##      
+##      .                                                         display "hello"
 ##      hello
 ```
 
@@ -543,12 +551,12 @@ cl[[1]]
 ##      StataID object:
 ##      
 ##       Stata "server" id:
-##       6qk 
+##       HoF 
 ##       (you can see it in the top of the Stata window)
 ##      
 ##       Full path to the Stata "server" <--> R
 ##       data exchange directory (folder):
-##       C:\Users\rutkoal\AppData\Local\Temp\1\RtmpAp1fNp/6qk 
+##       C:\Users\rutkoal\AppData\Local\Temp\1\RtmpyER5em/HoF 
 ##      
 ##       Should Stata close if this directory disappears:
 ##       no

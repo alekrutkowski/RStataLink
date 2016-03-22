@@ -47,6 +47,17 @@ If \code{future = FALSE}, a list with:
          \item \code{df} -- Optional: a data frame saved by Stata if \code{import_df} is \code{TRUE} and
          if it can be read by \code{\link[utils]{read.delim}}, else \code{NULL}
          if \code{\link[utils]{read.delim}} returns an error.
+			\item \code{results} -- if the argument \code{results} is not \code{NULL}, a list with
+			one or both of the elements named \code{e_class} and/or \code{r_class}
+			(depending on what was specified in the argument \code{results}), each including (if available):
+			\itemize{
+				   \item \code{scalars} -- a named list of numeric scalar values,
+				   \item \code{macros} -- a named list of character (string/text) values,
+				   \item \code{matrices} -- a named list of numeric matrices,
+				   \item \code{modeldf} -- only for \code{e_class}: a data.frame with the estimated coefficients
+				   (column \code{coef}), and standard errors (column \code{stderr}), with
+				   the Stata variable names recorded in row.names.
+			}
 }
 If \code{future = TRUE}, an object of S3 class 'StataFuture' to be used by
 \code{\link[RStataLink]{getStataFuture}}.
