@@ -84,12 +84,12 @@ i
 ##      StataID object:
 ##      
 ##       Stata "server" id:
-##       2fp 
+##       oZV 
 ##       (you can see it in the top of the Stata window)
 ##      
 ##       Full path to the Stata "server" <--> R
 ##       data exchange directory (folder):
-##       C:\Users\rutkoal\AppData\Local\Temp\1\RtmpADxwmD/2fp 
+##       C:\Users\rutkoal\AppData\Local\Temp\1\RtmpekNB9k/oZV 
 ##      
 ##       Should Stata close if this directory disappears:
 ##       no
@@ -474,7 +474,7 @@ r4
 
 ```r
 # A non-blocking call to Stata -- perform some long-running job
-system.time({f <- doInStata(i, 'sleep 8000 // in milliseconds in Stata
+system.time({f1 <- doInStata(i, 'sleep 6000 // in milliseconds in Stata
 							display "hello"',
 							future = TRUE,
 							results = NULL)})
@@ -482,7 +482,7 @@ system.time({f <- doInStata(i, 'sleep 8000 // in milliseconds in Stata
 
 ```
 ##         user  system elapsed 
-##            0       0       0
+##         0.00    0.02    0.01
 ```
 
 ```r
@@ -490,13 +490,13 @@ system.time({f <- doInStata(i, 'sleep 8000 // in milliseconds in Stata
 Sys.sleep(2)
 # collect the results from Stata if ready
 # (if not ready, you must wait -- it's blocking this time,
-# note the approximate time difference: 8 - 2 = 6):
-system.time({r5 <- getStataFuture(f)})
+# note the approximate time difference: 6 - 2 = 4):
+system.time({r5 <- getStataFuture(f1)})
 ```
 
 ```
 ##         user  system elapsed 
-##         0.45    0.09    5.99
+##         0.29    0.08    3.99
 ```
 
 ```r
@@ -505,10 +505,30 @@ r5
 
 ```
 ##      $log
-##      . sleep 8000 // in milliseconds in Stata
+##      . sleep 6000 // in milliseconds in Stata
 ##      
 ##      .                                                         display "hello"
 ##      hello
+```
+
+```r
+# You can avoid being blocked by an undelivered future by
+# preceding the extraction attempt with an isStataReady() check:
+f2 <- doInStata(i, 'sleep 2000 // in milliseconds in Stata
+							display "hello2"',
+							future = TRUE,
+							results = NULL)
+system.time(if (isStataReady(i, timeout = 0.5)) # default timeout here = 1 sec.
+	getStataFuture(f2) else message("Not yet ready!"))
+```
+
+```
+##      Not yet ready!
+```
+
+```
+##         user  system elapsed 
+##         0.01    0.01    0.53
 ```
 
 ```r
@@ -550,12 +570,12 @@ cl[[1]]
 ##      StataID object:
 ##      
 ##       Stata "server" id:
-##       tmJ 
+##       YDd 
 ##       (you can see it in the top of the Stata window)
 ##      
 ##       Full path to the Stata "server" <--> R
 ##       data exchange directory (folder):
-##       C:\Users\rutkoal\AppData\Local\Temp\1\RtmpADxwmD/tmJ 
+##       C:\Users\rutkoal\AppData\Local\Temp\1\RtmpekNB9k/YDd 
 ##      
 ##       Should Stata close if this directory disappears:
 ##       no
