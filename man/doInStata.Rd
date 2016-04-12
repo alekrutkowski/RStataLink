@@ -42,9 +42,9 @@ be obtained with the function \code{\link[RStataLink]{getStataFuture}}.}
 If \code{future = FALSE}, a list with:
 \itemize{
          \item \code{log} -- A character vector with Stata display log
-         if \code{nolog} is \code{FALSE}. May be an empty string if Stata does not finish executing
+         if \code{nolog = FALSE}. May be an empty string if Stata does not finish executing
          the code before \code{timeout}.
-         \item \code{df} -- Optional: a data frame saved by Stata if \code{import_df} is \code{TRUE} and
+         \item \code{df} -- Optional: a data frame saved by Stata if \code{import_df = TRUE} and
          if it can be read by \code{\link[utils]{read.delim}}, else \code{NULL}
          if \code{\link[utils]{read.delim}} returns an error.
 			\item \code{results} -- if the argument \code{results} is not \code{NULL}, a list with
