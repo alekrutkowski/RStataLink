@@ -28,6 +28,11 @@ adoFilesCode <- list.files(ado_path, full.names=TRUE) %>%
 
 # Other helper functions --------------------------------------------------
 
+contains <- function(vec, regex_pattern)
+	regex_pattern %>%
+	grepl(vec) %>%
+	any
+
 removeFiles <- function(path, time_stamp)
 	list.files(path,
 			   glob2rx('*' %++% time_stamp %++% '*'),

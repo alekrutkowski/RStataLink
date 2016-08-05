@@ -24,6 +24,9 @@
 #'          \item \code{log} -- A character vector with Stata display log
 #'          if \code{nolog = FALSE}. May be an empty string if Stata does not finish executing
 #'          the code before \code{timeout}.
+#'          \item \code{error} -- If Stata displays an error -- an integer number with the Stata
+#'          error code number (see \url{http://www.stata.com/manuals14/perror.pdf}).
+#'          The error message should be visible in the \code{log} (see the point above).
 #'          \item \code{df} -- Optional: a data frame saved by Stata if \code{import_df = TRUE} and
 #'          if it can be read by \code{\link[utils]{read.delim}}, else \code{NULL}
 #'          if \code{\link[utils]{read.delim}} returns an error.
@@ -96,6 +99,7 @@ doInStata <- function(id,
 		collapse='\n')
 	dofile <- path %++% time_stamp %++% '.do'
 	cat(stata_commands, file=dofile)
+	# close(dofile)
 	
 	StataFuture <- environment() %>%
 		as.list() %>%
@@ -117,22 +121,23 @@ getStataFuture <- function(StataFuture) {
 	
 	for (n in names(StataFuture))
 		assign(n, StataFuture[[n]])  # destructure StataFuture
-	# Wait for the Stata log file and output df file (if requested)
+
 	t <- Sys.time() %>% as.numeric
-	while (ifelse(import_df, !file.exists(outputtsvf), !file.exists(logfile)) &&
-		   Sys.time() %>% as.numeric %>% subtract(t) < timeout) {
-		Sys.sleep(.01)
-	}
-	
+
 	Output <- list()
+	# Wait until the log file is closed by Stata
 	repeat {
 		Output$log <- tryCatch(readLines(logfile), error = function(e) NULL, warning = function(w) NULL)
-		# Wait until the log file is closed by Stata
-		if (glob2rx('*' %++% 'log close `log_' %++% names(id) %++% '*') %>%
-			grepl(Output$log) %>% any ||
+		isError <- Output$log %>%
+			contains('^Waiting for remote task requests')
+		logClosed <- Output$log %>%
+			contains('^.*log close `log_' %++% names(id))
+		if (logClosed || isError ||
 			Sys.time() %>% as.numeric %>% subtract(t) >= timeout) {
 			if(length(Output$log)>=10)
-				Output$log %<>% extract(9:(length(.)-10)) %>%
+				Output$log %<>% extract(9:(length(.) -
+										   	ifelse(isError,
+										   		   5,10))) %>%
 				Filter(function(x)
 					x!='. ' & !grepl(time_stamp,x),
 					.) %>%
@@ -144,19 +149,30 @@ getStataFuture <- function(StataFuture) {
 		}
 		Sys.sleep(.01)
 	}
+	if (isError)
+		Output$error <- Output$log %>%
+		tail(1) %>%
+		sub('^r\\((\\d*)\\);','\\1',.) %>%
+		as.integer %>%
+		`class<-`('StataErrorNumber')
 	if (nolog) Output$log <- NULL
 	if (!is.null(Output$log)) class(Output$log) <- 'StataLog'
-	if (import_df) {
+	if (import_df && !isError) {
+		# Wait for the Stata output df file
+		while (!file.exists(outputtsvf) &&
+			   Sys.time() %>% as.numeric %>% subtract(t) < timeout) {
+			Sys.sleep(.01)
+		}
 		Output$df <- tryCatch(utils::read.delim(outputtsvf, stringsAsFactors=FALSE, check.names=FALSE),
 							  error = function(e) NULL, warning = function(w) NULL)
 	}
 	
-	if (!is.null(results)) {
+	if (!is.null(results) && !isError) {
 		resulttsvf <- path %++% 'resultdf_"CLASS"_' %++% time_stamp %++% '.tsv'
 		Output$results <- lapply(results, function(x)
-			tryCatch(utils::read.delim(resulttsvf %>%
-									   	sub('"CLASS"',x,.,fixed=TRUE),
-									   stringsAsFactors=FALSE, check.names=FALSE) %>%
+			tryCatch(resulttsvf %>%
+					 	sub('"CLASS"',x,.,fixed=TRUE) %>%
+					 	utils::read.delim(filename,stringsAsFactors=FALSE, check.names=FALSE) %>%
 					 	dfResultsToList %>%
 					 	`class<-`('StataResults') %>%
 					 	{if (length(.)==0) NULL else .},
@@ -249,6 +265,7 @@ startStata <- function(timeout=60,
 						'<<<exit_on_error601>>>', as.character(exit_on_error601)))
 	stata_server_code_file <- tempfile(fileext='.do')
 	cat(stata_server_code, file=stata_server_code_file)
+	# close(stata_server_code_file)
 	suppressWarnings(system(start_cmd %++% ' do "' %++% stata_server_code_file %++% '"',
 							wait=FALSE))
 	ID <- path

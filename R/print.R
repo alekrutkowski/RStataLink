@@ -11,6 +11,12 @@ print.StataResults <- function(res) {
 }
 
 #' @export
+print.StataErrorNumber <- function(res) {
+	str(res)
+	invisible(res)
+}
+
+#' @export
 str.Stata_b_se <- function(res, ...) {
 	print(res)
 	cat('\n')

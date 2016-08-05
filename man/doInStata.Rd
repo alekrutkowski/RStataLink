@@ -44,6 +44,9 @@ If \code{future = FALSE}, a list with:
          \item \code{log} -- A character vector with Stata display log
          if \code{nolog = FALSE}. May be an empty string if Stata does not finish executing
          the code before \code{timeout}.
+         \item \code{error} -- If Stata displays an error -- an integer number with the Stata
+         error code number (see \url{http://www.stata.com/manuals14/perror.pdf}).
+         The error message should be visible in the \code{log} (see the point above).
          \item \code{df} -- Optional: a data frame saved by Stata if \code{import_df = TRUE} and
          if it can be read by \code{\link[utils]{read.delim}}, else \code{NULL}
          if \code{\link[utils]{read.delim}} returns an error.
