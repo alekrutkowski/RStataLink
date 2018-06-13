@@ -172,7 +172,7 @@ getStataFuture <- function(StataFuture) {
 		Output$results <- lapply(results, function(x)
 			tryCatch(resulttsvf %>%
 					 	sub('"CLASS"',x,.,fixed=TRUE) %>%
-					 	utils::read.delim(filename,stringsAsFactors=FALSE, check.names=FALSE) %>%
+					 	utils::read.delim(stringsAsFactors=FALSE, check.names=FALSE) %>%
 					 	dfResultsToList %>%
 					 	`class<-`('StataResults') %>%
 					 	{if (length(.)==0) NULL else .},
