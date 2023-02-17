@@ -1,7 +1,7 @@
 qui { 
 	set more off
 	glo ID "<<<ID>>>"
-	window manage maintitle `"Stata "server" run by R (id: <<<ID>>>) - don't close it!"'
+	cap window manage maintitle `"Stata "server" run by R (id: <<<ID>>>) - don't close it!"'
 	set linesize 250
 	cls
 	noi di as txt "Waiting for remote task requests..."
