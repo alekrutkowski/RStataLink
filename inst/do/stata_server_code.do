@@ -3,7 +3,7 @@ qui {
 	glo ID "<<<ID>>>"
 	cap window manage maintitle `"Stata "server" run by R (id: <<<ID>>>) - don't close it!"'
 	set linesize 250
-	cls
+	cap cls
 	noi di as txt "Waiting for remote task requests..."
 	while 1 {
 		cap loc F : dir "<<<CD>>>" files "*.do", respectcase
