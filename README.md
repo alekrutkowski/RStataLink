@@ -44,9 +44,8 @@ The entire path to the shared network drive directory (see argument `compath` in
 
 ```r
 if ('devtools' %in% installed.packages()[,"Package"])
-  devtools::install_github('alekrutkowski/RStataLink',
-    INSTALL_opts="--no-staged-install") else
-      stop('You need package "devtools"!')
+    remotes::install_github('alekrutkowski/RStataLink') else
+	stop('You need package "remotes"!')
 ```
 
 ## Usage examples
