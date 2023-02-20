@@ -267,7 +267,8 @@ startStata <- function(timeout=60,
 	cat(stata_server_code, file=stata_server_code_file)
 	# close(stata_server_code_file)
 	suppressWarnings(system(start_cmd %++% ' do "' %++% stata_server_code_file %++% '"',
-							wait=FALSE))
+				wait=FALSE,
+			        ignore.stdout=TRUE))
 	ID <- path
 	class(ID) <- 'StataID'
 	names(ID) <- id
