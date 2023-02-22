@@ -44,7 +44,7 @@ The entire path to the shared network drive directory (see argument `compath` in
 
 ```r
 if ('remotes' %in% installed.packages()[,"Package"])
-    remotes::install_github('alekrutkowski/RStataLink') else
+    remotes::install_github('alekrutkowski/RStataLink', INSTALL_opts="--no-staged-install") else
 	stop('You need package "remotes"!')
 ```
 
