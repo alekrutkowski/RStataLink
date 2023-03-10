@@ -6,7 +6,8 @@
 \code{\link[RStataLink]{doInStata}}}
 \usage{
 startStata(timeout = 60, start_cmd = getOption("statapath"),
-  compath = tempdir(), exit_on_error601 = FALSE)
+  compath = tempdir(), exit_on_error601 = FALSE,
+  verify=TRUE)
 }
 \arguments{
 \item{timeout}{Seconds to wait for the response/confirmation from Stata. Default: 60.}
@@ -21,6 +22,10 @@ sub-directory should be created. Default: \code{\link{tempdir}()}.}
 \item{exit_on_error601}{Logical: should Stata be closed when the R--Stata data exchange
 working directory disappears and Stata ``server'' stops
 (\href{http://www.stata.com/search.cgi?query=601}{Stata error 601})? Default: \code{FALSE}.}
+
+\item{verify}{Logical (default: \code{TRUE}). Should R wait for the confirmation that Stata
+``server'' has been started. Use it as an escape hack if Stata starts, but the verification
+cannot be obtained.}
 }
 \value{
 An object of S3 class 'StataID' if Stata confirms that
