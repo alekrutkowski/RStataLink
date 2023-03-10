@@ -46,65 +46,65 @@
 #' \code{\link[RStataLink]{getStataFuture}}.
 #' @export
 doInStata <- function(id,
-					  code="",
-					  df=NULL,
-					  import_df=!is.null(df),
-					  results=c('e','r'),
-					  timeout=Inf,
-					  preserve_restore=FALSE,
-					  cleanup=TRUE,
-					  nolog=FALSE,
-					  future=FALSE) {
-	stopifnot(class(id)=='StataID',
-			  is.character(code),
-			  is.data.frame(df) || is.null(df),
-			  is.logical(import_df), length(import_df)==1,
-			  if (results %>% is.null) TRUE else
-			  	all(results %in% c('e','r')),
-			  is.numeric(timeout), timeout>=0,
-			  is.logical(preserve_restore), length(preserve_restore)==1,
-			  is.logical(cleanup), length(cleanup)==1,
-			  is.logical(nolog), length(nolog)==1)
-	
-	path <- id %++% '/'
-	time_stamp <- timeStamp()
-	logfile <- paste0(path, 'statalog_', names(id), '_', time_stamp, '.log')
-	
-	import_df_cmd <- ""
-	if (!is.null(df)) {
-		inputtsvf <- path %++% 'inputdf_' %++% time_stamp %++% '.tsv'
-		write.table(df, file=inputtsvf, sep="\t", na="", row.names=FALSE)
-		import_df_cmd <- 'qui insheet using "' %++% inputtsvf %++% '", tab names clear \n'
-	}
-	
-	save_result_cmd <- ""
-	outputtsvf <- NULL
-	if (import_df) {
-		outputtsvf <- path %++% 'outputdf_' %++% time_stamp %++% '.tsv'
-		save_result_cmd <- 'qui outsheet using "' %++% outputtsvf %++% '", replace \n'
-	}
-	
-	stata_commands <- paste(
-		c('tempname log_' %++% names(id),
-		  'cap log close `log_' %++% names(id) %++% '\'',
-		  'log using "' %++% logfile %++% '", replace text name(`log_' %++% names(id) %++% '\')',
-		  ifelse(preserve_restore, 'preserve', ""),
-		  import_df_cmd,
-		  code,
-		  ifelse(!is.null(results), 'qui getStataResults ' %++% time_stamp, ""),
-		  save_result_cmd,
-		  ifelse(preserve_restore, 'restore', ""),
-		  'log close `log_' %++% names(id) %++% '\'',
-		  '\n'),
-		collapse='\n')
-	dofile <- path %++% time_stamp %++% '.do'
-	cat(stata_commands, file=dofile)
-	# close(dofile)
-	
-	StataFuture <- environment() %>%
-		as.list() %>%
-		`class<-`('StataFuture')
-	if (future) StataFuture else getStataFuture(StataFuture)
+                      code="",
+                      df=NULL,
+                      import_df=!is.null(df),
+                      results=c('e','r'),
+                      timeout=Inf,
+                      preserve_restore=FALSE,
+                      cleanup=TRUE,
+                      nolog=FALSE,
+                      future=FALSE) {
+  stopifnot(class(id)=='StataID',
+            is.character(code),
+            is.data.frame(df) || is.null(df),
+            is.logical(import_df), length(import_df)==1,
+            if (results %>% is.null) TRUE else
+              all(results %in% c('e','r')),
+            is.numeric(timeout), timeout>=0,
+            is.logical(preserve_restore), length(preserve_restore)==1,
+            is.logical(cleanup), length(cleanup)==1,
+            is.logical(nolog), length(nolog)==1)
+  
+  path <- id %++% '/'
+  time_stamp <- timeStamp()
+  logfile <- paste0(path, 'statalog_', names(id), '_', time_stamp, '.log')
+  
+  import_df_cmd <- ""
+  if (!is.null(df)) {
+    inputtsvf <- path %++% 'inputdf_' %++% time_stamp %++% '.tsv'
+    write.table(df, file=inputtsvf, sep="\t", na="", row.names=FALSE)
+    import_df_cmd <- 'qui insheet using "' %++% inputtsvf %++% '", tab names clear \n'
+  }
+  
+  save_result_cmd <- ""
+  outputtsvf <- NULL
+  if (import_df) {
+    outputtsvf <- path %++% 'outputdf_' %++% time_stamp %++% '.tsv'
+    save_result_cmd <- 'qui outsheet using "' %++% outputtsvf %++% '", replace \n'
+  }
+  
+  stata_commands <- paste(
+    c('tempname log_' %++% names(id),
+      'cap log close `log_' %++% names(id) %++% '\'',
+      'log using "' %++% logfile %++% '", replace text name(`log_' %++% names(id) %++% '\')',
+      ifelse(preserve_restore, 'preserve', ""),
+      import_df_cmd,
+      code,
+      ifelse(!is.null(results), 'qui getStataResults ' %++% time_stamp, ""),
+      save_result_cmd,
+      ifelse(preserve_restore, 'restore', ""),
+      'log close `log_' %++% names(id) %++% '\'',
+      '\n'),
+    collapse='\n')
+  dofile <- path %++% time_stamp %++% '.do'
+  cat(stata_commands, file=dofile)
+  close(file(dofile))
+  
+  StataFuture <- environment() %>%
+    as.list() %>%
+    `class<-`('StataFuture')
+  if (future) StataFuture else getStataFuture(StataFuture)
 }
 
 #' Obtain Stata output from a job previously sent to Stata by \code{\link[RStataLink]{doInStata}}
@@ -117,71 +117,73 @@ doInStata <- function(id,
 #' argument \code{future = FALSE}.
 #' @export
 getStataFuture <- function(StataFuture) {
-	stopifnot(class(StataFuture)=='StataFuture')
-	
-	for (n in names(StataFuture))
-		assign(n, StataFuture[[n]])  # destructure StataFuture
-
-	t <- Sys.time() %>% as.numeric
-
-	Output <- list()
-	# Wait until the log file is closed by Stata
-	repeat {
-		Output$log <- tryCatch(readLines(logfile), error = function(e) NULL, warning = function(w) NULL)
-		isError <- Output$log %>%
-			contains('^Waiting for remote task requests')
-		logClosed <- Output$log %>%
-			contains('^.*log close `log_' %++% names(id))
-		if (logClosed || isError ||
-			Sys.time() %>% as.numeric %>% subtract(t) >= timeout) {
-			if(length(Output$log)>=10)
-				Output$log %<>% extract(9:(length(.) -
-										   	ifelse(isError,
-										   		   5,10))) %>%
-				Filter(function(x)
-					x!='. ' & !grepl(time_stamp,x),
-					.) %>%
-				sub(rep.int('-',240) %>% paste(collapse=""),
-					rep.int('-',68) %>% paste(collapse=""),
-					., fixed=TRUE) else
-						Output$log <- ""
-					break
-		}
-		Sys.sleep(.01)
-	}
-	if (isError)
-		Output$error <- Output$log %>%
-		tail(1) %>%
-		sub('^r\\((\\d*)\\);','\\1',.) %>%
-		as.integer %>%
-		`class<-`('StataErrorNumber')
-	if (nolog) Output$log <- NULL
-	if (!is.null(Output$log)) class(Output$log) <- 'StataLog'
-	if (import_df && !isError) {
-		# Wait for the Stata output df file
-		while (!file.exists(outputtsvf) &&
-			   Sys.time() %>% as.numeric %>% subtract(t) < timeout) {
-			Sys.sleep(.01)
-		}
-		Output$df <- tryCatch(utils::read.delim(outputtsvf, stringsAsFactors=FALSE, check.names=FALSE),
-							  error = function(e) NULL, warning = function(w) NULL)
-	}
-	
-	if (!is.null(results) && !isError) {
-		resulttsvf <- path %++% 'resultdf_"CLASS"_' %++% time_stamp %++% '.tsv'
-		Output$results <- lapply(results, function(x)
-			tryCatch(resulttsvf %>%
-					 	sub('"CLASS"',x,.,fixed=TRUE) %>%
-					 	utils::read.delim(stringsAsFactors=FALSE, check.names=FALSE) %>%
-					 	dfResultsToList %>%
-					 	`class<-`('StataResults') %>%
-					 	{if (length(.)==0) NULL else .},
-					 error = function(e) NULL, warning = function(w) NULL)) %>%
-			set_names(results %++% '_class')
-	}
-	
-	if (cleanup) removeFiles(path, time_stamp)
-	Output
+  stopifnot(class(StataFuture)=='StataFuture')
+  
+  for (n in names(StataFuture))
+    assign(n, StataFuture[[n]])  # destructure StataFuture
+  
+  t <- Sys.time() %>% as.numeric
+  
+  Output <- list()
+  # Wait until the log file is closed by Stata
+  repeat {
+    Output$log <- tryCatch(readLines(logfile), error = function(e) NULL, warning = function(w) NULL)
+    close(file(logfile))
+    isError <- Output$log %>%
+      contains('^Waiting for remote task requests')
+    logClosed <- Output$log %>%
+      contains('^.*log close `log_' %++% names(id))
+    if (logClosed || isError ||
+        Sys.time() %>% as.numeric %>% subtract(t) >= timeout) {
+      if(length(Output$log)>=10)
+        Output$log %<>% extract(9:(length(.) -
+                                     ifelse(isError,
+                                            5,10))) %>%
+        Filter(function(x)
+          x!='. ' & !grepl(time_stamp,x),
+          .) %>%
+        sub(rep.int('-',240) %>% paste(collapse=""),
+            rep.int('-',68) %>% paste(collapse=""),
+            ., fixed=TRUE) else
+              Output$log <- ""
+            break
+    }
+    Sys.sleep(.01)
+  }
+  if (isError)
+    Output$error <- Output$log %>%
+    tail(1) %>%
+    sub('^r\\((\\d*)\\);','\\1',.) %>%
+    as.integer %>%
+    `class<-`('StataErrorNumber')
+  if (nolog) Output$log <- NULL
+  if (!is.null(Output$log)) class(Output$log) <- 'StataLog'
+  if (import_df && !isError) {
+    # Wait for the Stata output df file
+    while (!file.exists(outputtsvf) &&
+           Sys.time() %>% as.numeric %>% subtract(t) < timeout) {
+      Sys.sleep(.01)
+    }
+    Output$df <- tryCatch(utils::read.delim(outputtsvf, stringsAsFactors=FALSE, check.names=FALSE),
+                          error = function(e) NULL, warning = function(w) NULL)
+    close(file(outputtsvf))
+  }
+  
+  if (!is.null(results) && !isError) {
+    resulttsvf <- path %++% 'resultdf_"CLASS"_' %++% time_stamp %++% '.tsv'
+    Output$results <- lapply(results, function(x)
+      tryCatch(resulttsvf %>%
+                 sub('"CLASS"',x,.,fixed=TRUE) %>%
+                 utils::read.delim(stringsAsFactors=FALSE, check.names=FALSE) %>%
+                 dfResultsToList %>%
+                 `class<-`('StataResults') %>%
+                 {if (length(.)==0) NULL else .},
+               error = function(e) NULL, warning = function(w) NULL)) %>%
+      set_names(results %++% '_class')
+  }
+  
+  if (cleanup) removeFiles(path, time_stamp)
+  Output
 }
 
 #' Remove Stata task/job sent to Stata by \code{\link[RStataLink]{doInStata}}
@@ -192,10 +194,10 @@ getStataFuture <- function(StataFuture) {
 #' when a job was sent to Stata.
 #' @export
 deleteStataFuture <- function(StataFuture) {
-	stopifnot(class(StataFuture)=='StataFuture')
-	for (n in names(StataFuture))
-		assign(n, StataFuture[[n]])  # destructure StataFuture
-	removeFiles(path, time_stamp)
+  stopifnot(class(StataFuture)=='StataFuture')
+  for (n in names(StataFuture))
+    assign(n, StataFuture[[n]])  # destructure StataFuture
+  removeFiles(path, time_stamp)
 }
 
 #' Check if Stata instance is ready to receive a job (running and not busy)
@@ -209,17 +211,17 @@ deleteStataFuture <- function(StataFuture) {
 #' @return \code{TRUE} or \code{FALSE}
 #' @export
 isStataReady <- function(id, timeout=1) {
-	stopifnot(class(id)=='StataID',
-			  is.numeric(timeout), timeout>=0)
-	code <- c(LETTERS, letters, 0:9) %>%
-		sample(10, TRUE) %>%
-		paste(collapse="")
-	log <- doInStata(id,
-					 'di "' %++% code %++% '"',
-					 timeout=timeout,
-					 results=NULL)$log
-	glob2rx('*' %++% code %++% '*') %>%
-		grepl(log) %>% any
+  stopifnot(class(id)=='StataID',
+            is.numeric(timeout), timeout>=0)
+  code <- c(LETTERS, letters, 0:9) %>%
+    sample(10, TRUE) %>%
+    paste(collapse="")
+  log <- doInStata(id,
+                   'di "' %++% code %++% '"',
+                   timeout=timeout,
+                   results=NULL)$log
+  glob2rx('*' %++% code %++% '*') %>%
+    grepl(log) %>% any
 }
 
 #' Open a Stata instance in a local server-like mode to be used by R through
@@ -235,47 +237,51 @@ isStataReady <- function(id, timeout=1) {
 #' @param exit_on_error601 Logical: should Stata be closed when the R--Stata data exchange
 #' working directory disappears and Stata ``server'' stops
 #' (\href{http://www.stata.com/search.cgi?query=601}{Stata error 601})? Default: \code{FALSE}.
+#' @param verify Logical (default: \code{TRUE}). Should R wait for the confirmation that Stata
+#' ``server'' has been started. Use it as an escape hack if Stata starts, but the verification
+#' cannot be obtained.
 #' @return An object of S3 class 'StataID' if Stata confirms that
 #' the 'server' is ready, else an error.
 #' @export
 startStata <- function(timeout=60,
-					   start_cmd=getOption('statapath'),
-					   compath=tempdir(),
-					   exit_on_error601=FALSE) {
-	stopifnot(is.numeric(timeout), timeout>=0,
-			  !is.null(start_cmd), is.character(start_cmd), length(start_cmd)==1,
-			  is.character(compath), length(compath)==1,
-			  is.logical(exit_on_error601), length(exit_on_error601)==1)
-	repeat {
-		id <- c(LETTERS, letters, 0:9) %>%
-			sample(3, TRUE) %>%
-			paste(collapse="")
-		path <- compath %++% '/' %++% id
-		result <- dir.create(path)
-		if (result) break
-	}
-	stata_server_code <- c(adoFilesCode,
-						   stataServerCode) %>%
-		paste(collapse='\n') %>%
-		multiGsub(list(
-			# '<<<lstrfun.ado>>>', ado_path %++% 'lstrfun.ado',
-			# 			'<<<mygen.ado>>>', ado_path %++% 'mygen.ado',
-						'<<<ID>>>', id,
-						'<<<CD>>>', path,
-						'<<<exit_on_error601>>>', as.character(exit_on_error601)))
-	stata_server_code_file <- tempfile(fileext='.do')
-	cat(stata_server_code, file=stata_server_code_file)
-	# close(stata_server_code_file)
-	suppressWarnings(system(start_cmd %++% ' do "' %++% stata_server_code_file %++% '"',
-				wait=FALSE,
-			        ignore.stdout=TRUE))
-	ID <- path
-	class(ID) <- 'StataID'
-	names(ID) <- id
-	attr(ID, 'exit_on_error601') <- exit_on_error601
-	if (isStataReady(ID, timeout) %>% not) stop('Starting Stata  failed.') else
-		message('Stata "server" started successfully.')
-	ID
+                       start_cmd=getOption('statapath'),
+                       compath=tempdir(),
+                       exit_on_error601=FALSE,
+                       verify=TRUE) {
+  stopifnot(is.numeric(timeout), timeout>=0,
+            !is.null(start_cmd), is.character(start_cmd), length(start_cmd)==1,
+            is.character(compath), length(compath)==1,
+            is.logical(exit_on_error601), length(exit_on_error601)==1)
+  repeat {
+    id <- c(LETTERS, letters, 0:9) %>%
+      sample(3, TRUE) %>%
+      paste(collapse="")
+    path <- compath %++% '/' %++% id
+    result <- dir.create(path)
+    if (result) break
+  }
+  stata_server_code <- c(adoFilesCode,
+                         stataServerCode) %>%
+    paste(collapse='\n') %>%
+    multiGsub(list(
+      # '<<<lstrfun.ado>>>', ado_path %++% 'lstrfun.ado',
+      # 			'<<<mygen.ado>>>', ado_path %++% 'mygen.ado',
+      '<<<ID>>>', id,
+      '<<<CD>>>', path,
+      '<<<exit_on_error601>>>', as.character(exit_on_error601)))
+  stata_server_code_file <- tempfile(fileext='.do')
+  cat(stata_server_code, file=stata_server_code_file)
+  close(file(stata_server_code_file))
+  suppressWarnings(system(start_cmd %++% ' do "' %++% stata_server_code_file %++% '"',
+                          wait=FALSE,
+                          ignore.stdout=TRUE))
+  ID <- path
+  class(ID) <- 'StataID'
+  names(ID) <- id
+  attr(ID, 'exit_on_error601') <- exit_on_error601
+  if (verify && isStataReady(ID, timeout) %>% not) stop('Starting Stata  failed.') else
+    message('Stata "server" started successfully.')
+  ID
 }
 
 #' Stop (close) Stata instance
@@ -288,14 +294,14 @@ startStata <- function(timeout=60,
 #' \code{clear=FALSE}.
 #' @export
 stopStata <- function(id, clear=FALSE) {
-	stopifnot(class(id)=='StataID',
-			  is.logical(clear), length(clear)==1)
-	doInStata(id, 'exit, STATA ' %++% if (clear) 'clear', timeout=3) %>%
-		extract2('log') %>%
-		equals('no; data in memory would be lost') %>%
-		any -> problem
-	if (problem)
-		stop('\nStata error:\n no; data in memory would be lost\n r(4);\n',
-			 'Use argument clear=TRUE in stopStata()\n',
-			 'if you want to discard the data in Stata memory.\n')
+  stopifnot(class(id)=='StataID',
+            is.logical(clear), length(clear)==1)
+  doInStata(id, 'exit, STATA ' %++% if (clear) 'clear', timeout=3) %>%
+    extract2('log') %>%
+    equals('no; data in memory would be lost') %>%
+    any -> problem
+  if (problem)
+    stop('\nStata error:\n no; data in memory would be lost\n r(4);\n',
+         'Use argument clear=TRUE in stopStata()\n',
+         'if you want to discard the data in Stata memory.\n')
 }
