@@ -20,8 +20,7 @@ and standard errors), shaped for convenient consumption in R
 - **concurrency** "primitive" ([future](https://en.wikipedia.org/wiki/Futures_and_promises)-like)
 and parallel `apply()`-style functions for executing Stata code in a concurrent/parallel
 manner in a "cluster" of multiple Stata instances (regular and load-balancing versions)
-- should work **cross-platform** -- pure R and pure Stata code (but developed and tested on
-MS Windows only)
+- should work **cross-platform** (Windows, Linux, possibly Mac too) -- pure R and pure Stata code
 
 Make your work with Stata more
 [functional](https://en.wikipedia.org/wiki/Functional_programming)!
