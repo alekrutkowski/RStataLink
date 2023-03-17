@@ -55,8 +55,7 @@ but that would be less convenient):
 
 ```r
 # A virtualised app in my case, therefore such a complicated path, should be simpler normally:
-options(statapath=paste('"C:\\Program Files (x86)\\Microsoft Application Virtualization Client\\sfttray.exe"',
-                        '/launch "StataMP 14 (64-bit) [V] 14.0bd001"'))
+options(statapath=paste('C:/ProgramData/Microsoft/AppV/Client/Integration/C8737350-E2E4-4B3E-A45D-5D2C0B8150FC/Root/StataMP-64.exe'))
 ```
 
 ### A single Stata instance functionality demo
