@@ -1,6 +1,9 @@
 # RStataLink -- R package for calling Stata from R interactively
 Aleksander Rutkowski  
 
+> [!TIP]
+> See https://github.com/alekrutkowski/RStataLink2 for a newer, faster and more robust version
+
 ## Features
 
 Execute smaller or larger bits and pieces of Stata code **interactively** from R 
